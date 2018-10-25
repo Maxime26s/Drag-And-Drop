@@ -1,6 +1,9 @@
 import javafx.application.Application;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.*;
@@ -13,8 +16,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 public class Main extends Application {
-    private ArrayList<ImageView> imageView = new ArrayList<>();
-    private ArrayList<Image> image = new ArrayList<>();
+    private ArrayList<Image> imageShuffle = new ArrayList<>();
+    private ArrayList<ImageView> imageViews = new ArrayList<>();
+    private ArrayList<Image> images = new ArrayList<>();
 
     public static void main(String[] args) {
         launch();
@@ -24,41 +28,39 @@ public class Main extends Application {
         BorderPane borderPane = new BorderPane();
         Scene scene = new Scene(borderPane);
 
-        primaryStage.setHeight(600);
-        primaryStage.setWidth(600);
+        primaryStage.setMaximized(true);
         primaryStage.setTitle("Laboratoire 8");
-        primaryStage.setResizable(true);
+        primaryStage.setResizable(false);
 
         for (int i=0;i<9;i++){
-            image.add(new Image("file:images/mario" + i + ".jpg"));
-            imageView.add(new ImageView(image.get(i)));
-            dragAndDropSetUp(imageView.get(i));
+            images.add(new Image("file:images/mario" + i + ".jpg"));
+            imageViews.add(new ImageView(images.get(i)));
+            imageShuffle.add(images.get(i));
+            dragAndDropSetUp(imageViews.get(i));
             }
-        VBox vBox1 = new VBox(imageView.get(0),imageView.get(3),imageView.get(6));
+        VBox vBox1 = new VBox(imageViews.get(0),imageViews.get(3),imageViews.get(6));
         vBox1.setAlignment(Pos.CENTER);
-        VBox vBox2 = new VBox(imageView.get(1),imageView.get(4),imageView.get(7));
+        VBox vBox2 = new VBox(imageViews.get(1),imageViews.get(4),imageViews.get(7));
         vBox2.setAlignment(Pos.CENTER);
-        VBox vBox3 = new VBox(imageView.get(2),imageView.get(5),imageView.get(8));
+        VBox vBox3 = new VBox(imageViews.get(2),imageViews.get(5),imageViews.get(8));
         vBox3.setAlignment(Pos.CENTER);
         HBox hBox = new HBox(vBox1,vBox2,vBox3);
         hBox.setAlignment(Pos.CENTER);
         borderPane.setCenter(hBox);
-
-        shuffle(vBox1,vBox2,vBox3);
+        shuffle();
 
         scene.setOnKeyPressed(event->{
-            if(event.getCode() == KeyCode.M) {
-                shuffle(vBox1,vBox2,vBox3);
+            if(event.getCode() == KeyCode.M && event.isControlDown()) {
+                shuffle();
             }
         });
 
-            primaryStage.setScene(scene);
+        primaryStage.setScene(scene);
         primaryStage.show();
     }
 
     private void dragAndDropSetUp(ImageView imageView){
         imageView.setOnDragDetected(event -> {
-            System.out.println("Starting Drag and Drop");
             Dragboard dragboard = imageView.startDragAndDrop(TransferMode.MOVE);
             ClipboardContent contenu = new ClipboardContent();
             contenu.putString("");
@@ -71,17 +73,32 @@ public class Main extends Application {
             ImageView imageViewSource = (ImageView) event.getGestureSource();
             ImageView imageViewTarget = (ImageView) event.getGestureTarget();
             Image imageTempSource = imageViewSource.getImage();
-            Image imageTempTarget = imageViewTarget.getImage();
-            imageViewSource.setImage(imageTempTarget);
+            imageViewSource.setImage(imageViewTarget.getImage());
             imageViewTarget.setImage(imageTempSource);
-
+            event.setDropCompleted(true);
+        });
+        imageView.setOnDragDone(event -> {
+            boolean done=true;
+            for (int i=0;i<imageViews.size();i++)
+                if (done)
+                    done=imageViews.get(i).getImage().equals(images.get(i));
+            if (done){
+                Label label = new Label("Vous avez gagné!");
+                HBox hb = new HBox(label);
+                Dialog dialog = new Dialog();
+                dialog.getDialogPane().setContent(hb);
+                dialog.getDialogPane().getButtonTypes().add(
+                        new ButtonType("Rejouer")
+                );
+                dialog.showAndWait();
+                shuffle();
+            }
         });
     }
 
-    private void shuffle(VBox vBox1,VBox vBox2, VBox vBox3){
-        Collections.shuffle(imageView);
-        vBox1 = new VBox(imageView.get(0),imageView.get(3),imageView.get(6));
-        vBox2 = new VBox(imageView.get(1),imageView.get(4),imageView.get(7));
-        vBox3 = new VBox(imageView.get(2),imageView.get(5),imageView.get(8));
+    private void shuffle(){
+        Collections.shuffle(imageShuffle);
+        for (int i=0;i<imageShuffle.size();i++)
+            imageViews.get(i).setImage(imageShuffle.get(i));
     }
 }
